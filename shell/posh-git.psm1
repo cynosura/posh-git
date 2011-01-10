@@ -1,3 +1,5 @@
+Import-Module (Join-Path $PSScriptRoot "PoshGit.dll")
+
 Push-Location $psScriptRoot
 . ./Utils.ps1
 . ./GitUtils.ps1
@@ -8,9 +10,9 @@ Pop-Location
 
 Export-ModuleMember -Function @(
         'Write-GitStatus', 
-        'Get-GitStatus', 
+        'Get-GitStatus',
         'Enable-GitColors', 
         'Get-GitDirectory',
         'GitTabExpansion',
-        'tgit')
+        'tgit') -Alias 'gitstat'
 
