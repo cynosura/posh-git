@@ -43,6 +43,14 @@ if(Test-Path Function:\TabExpansion) {
     }
 }
 
+function GitTree() {
+	if($Global:GitStatus){
+		Write-Gitstatus ($Global:GitStatus) $true
+	} else {	
+		Write-Host "fatal: Not a git repository (or any of the parent directories): .git"
+	}
+} 
+
 Enable-GitColors
 
 Pop-Location

@@ -9,7 +9,7 @@
 	using System.IO;
 	using System.Management.Automation.Host;
 
-	[Cmdlet(VerbsCommon.Get, "Tree", SupportsShouldProcess = true)]
+	[Cmdlet(VerbsCommon.Show, "GitTree", SupportsShouldProcess = true)]
 	public class GetStatusTreeCmd : PSCmdlet
 	{
 		enum WorkingStatus : byte {
@@ -38,10 +38,10 @@
 			}
 		}
 		
-		[Parameter(Position = 0, Mandatory = true)]
+		[Parameter(Position = 0, Mandatory = false)]
 		public PSObject Working { get; set; }
 
-		[Parameter(Position = 1, Mandatory = true)]
+		[Parameter(Position = 1, Mandatory = false)]
 		public PSObject Index { get; set; }
 
 		[Parameter(Position = 2, Mandatory = true)]
@@ -57,7 +57,7 @@
 			DirectoryInfo di = new DirectoryInfo(pi.Path);
 
 			// file paths on windows are case insensitive, 
-			// ensure any string comparisons are also.
+			// ensure any path comparisons are also.
 			var lookup = new Dictionary<string, ItemStatus>(
 				StringComparer.OrdinalIgnoreCase);
 
@@ -121,6 +121,8 @@
 		}
 
 		bool ProcessWorkingItems(DirectoryInfo di, Dictionary<string, ItemStatus> lookup) {
+			if (Working == null) return false;
+
 			var proc = new Func<IEnumerable<string>, WorkingStatus, bool>((c, x) => {
 				bool hasItems = false;
 				foreach (string path in c) {
@@ -144,6 +146,8 @@
 		}
 
 		bool ProcessIndexItems(DirectoryInfo di, Dictionary<string, ItemStatus> lookup) {
+			if (Index == null) return false;
+			
 			var proc = new Func<IEnumerable<string>, IndexStatus, bool>((c, x) => {
 				bool hasItems = false;
 				foreach (string path in c) {
