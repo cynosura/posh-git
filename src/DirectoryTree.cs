@@ -45,9 +45,7 @@
 
 				bool isLast = i == lim;
 				
-				if ((subdir.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
-					continue;
-
+				
 				if (isLast) {
 					// last sub dir
 					var line = new string[] { currIndent, LAST_IN_BRANCH, subdir.Name };
@@ -109,7 +107,7 @@
 		static readonly IFileInfo[] sZeroFileArr = new IFileInfo[0];
 
 		readonly DirectoryInfo mPhysicalDir;
-		readonly bool VirtualItemsOnly;
+		protected readonly bool VirtualItemsOnly;
 
 		public VirtualDirectory(DirectoryInfo physicalDir, bool virtualItemsOnly) {
 			mPhysicalDir = physicalDir;

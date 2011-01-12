@@ -47,6 +47,9 @@
 		[Parameter(Position = 2, Mandatory = true)]
 		public string GitDir { get; set; }
 
+		[Parameter(Position = 3, Mandatory = false)]
+		public bool ShowAllFiles { get; set; }
+
 		DirectoryInfo GetRepoRoot() {
 			if (GitDir == null) return null;
 			return new DirectoryInfo(GitDir).Parent;
@@ -80,7 +83,7 @@
 							printRowFunc(ItemStatus.Default, item);
 					}
 					return false;
-				});
+				}, ShowAllFiles);
 
 				base.Host.UI.WriteLine();
 			}

@@ -44,12 +44,11 @@ $global:GitPromptSettings = New-Object PSObject -Property @{
     Debug                     = $false
 }
 
-function Write-GitStatus($status, $asTree = $false) {
+function Write-GitStatus($status, $asTree = $false, $showAllFiles = $false) {
     $s = $global:GitPromptSettings
     if ($status -and $s) {
 		if($asTree) {
-			$gitDir = (Get-GitDirectory)
-			Show-GitTree $stat.Working $stat.Index $gitDir
+			Show-GitTree $status.Working $status.Index $status.GitDir $showAllFiles
 		} else {
 			$currentBranch = $status.Branch
 			

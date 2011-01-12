@@ -40,8 +40,12 @@ function TabExpansion($line, $lastWord) {
 }
 
 function GitTree() {
+	param(
+		[switch] $all
+	)
+
 	if($Global:GitStatus){
-		Write-Gitstatus ($Global:GitStatus) $true
+		Write-Gitstatus $GitStatus $true ($all.isPresent)
 	} else {	
 		Write-Host "fatal: Not a git repository (or any of the parent directories): .git"
 	}
