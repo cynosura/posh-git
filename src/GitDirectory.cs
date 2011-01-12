@@ -21,8 +21,8 @@
 	public static class GitTree
 	{
 		public static void DrawTree(DirectoryInfo di, IEnumerable<string> removedPaths, 
-				Func<string, IFileSystemInfo, bool> printer) {
-			GitDirectory gitd = new GitDirectory(di, new List<string>(removedPaths));
+				Func<string, IFileSystemInfo, bool> printer, bool includeAllFiles) {
+			GitDirectory gitd = new GitDirectory(di, new List<string>(removedPaths), !includeAllFiles);
 			DirectoryTree.DrawTree(gitd, printer);
 		}
 	}
@@ -68,7 +68,7 @@
 		#region class members
 		static readonly IDirectoryInfo[] NULL_DIRS = new IDirectoryInfo[0];
 
-		private static T[] RemoveFirst<T>(T[] items) {
+		static T[] RemoveFirst<T>(T[] items) {
 			if (items.Length > 1) {
 				T[] result = new T[items.Length - 1];
 				Array.Copy(items, 1, result, 0, items.Length - 1);
@@ -77,7 +77,7 @@
 				return new T[0];
 		}
 
-		private static List<FlattenedSubTree> MapToSubTrees(IList<VirtualPath> paths) {
+		static List<FlattenedSubTree> MapToSubTrees(IList<VirtualPath> paths) {
 			List<VirtualPath> items = new List<VirtualPath>();
 			List<FlattenedSubTree> subTrees = new List<FlattenedSubTree>(paths.Count / 3);
 			
@@ -93,20 +93,18 @@
 			return subTrees;
 		}
 
-		/// TODO: optimize
-		private static FlattenedSubTree GetSubComponents(IList<VirtualPath> components, ref int fromIndex) {
-			//Console.WriteLine("- get subcomponents to " + String.Join("\\" , components[fromIndex]));			
-
+		static FlattenedSubTree GetSubComponents(IList<VirtualPath> components, ref int fromIndex) {
 			// get logical children to the item at the specified index
 			// assumes that the components are ordered
 			VirtualPath target = components[fromIndex];
-			List<VirtualPath> subComponents = new List<VirtualPath>();
-
-			string prefix = target.Components[0];
+			List<VirtualPath> subComponents = null;
 
 			if (target.Components.Length > 1)
-				subComponents.Add(new VirtualPath(target.Uri, RemoveFirst(target.Components)));
+				subComponents = new List<VirtualPath>() {
+					new VirtualPath(target.Uri, RemoveFirst(target.Components))
+				};
 
+			string prefix = target.Components[0];
 			for (++fromIndex; fromIndex < components.Count; fromIndex++) {
 				var curr = components[fromIndex];
 				if (curr.Components.Length > 1 && curr.Components[0] == prefix) {
@@ -121,38 +119,20 @@
 				(IList<VirtualPath>)new VirtualPath[0]{});
 		}
 
-		private static void SortPaths(List<VirtualPath> paths) {
+		static void SortPaths(List<VirtualPath> paths) {
 			paths.Sort((x,y) => Uri.Compare(x.Uri, y.Uri, 
 		 		UriComponents.Path, UriFormat.Unescaped, 
 				StringComparison.OrdinalIgnoreCase));
 		}
 
-		private static List<IDirectoryInfo> SplitToPhysical(DirectoryInfo[] subDirs, IList<FlattenedSubTree> subTrees) {
-			var physicalSubtrees = new List<IDirectoryInfo>(subTrees.Count / 2);
-
-			// from the current location, split all the subtrees in to
-			// those with physical nodes and those that are virtual
-			for (int i = subTrees.Count - 1; i >= 0; i--) {
-				var curr = subTrees[i];
-				var prefix = curr.Node.Components[0];
-
-				foreach (var physicalDir in subDirs) {
-					if (physicalDir.Name.Equals(prefix, StringComparison.OrdinalIgnoreCase)) {
-						physicalSubtrees.Add(new GitDirectory(physicalDir, curr));
-						subTrees.RemoveAt(i);
-						break;
-					}
-				}
-			}
-			return physicalSubtrees;
-		}
+		
 		#endregion
 
 		readonly IList<FlattenedSubTree> mMissingVirtualPaths;
 		readonly IList<IDirectoryInfo> mMissingPhysicalPaths;
 
-		public GitDirectory(DirectoryInfo physicalDirectory, IList<string> virtualItems) :
-			base(physicalDirectory, true) {
+		public GitDirectory(DirectoryInfo physicalDirectory, IList<string> virtualItems, bool virtualOnly) :
+			base(physicalDirectory, virtualOnly) {
 
 			if (virtualItems != null && virtualItems.Count > 0) {
 				var removedComponents = new List<VirtualPath>(
@@ -168,7 +148,7 @@
 				mMissingPhysicalPaths = NULL_DIRS;
 		}
 
-		private GitDirectory(IDirectoryInfo parent, FlattenedSubTree node) : base(null, true) {
+		GitDirectory(IDirectoryInfo parent, FlattenedSubTree node) : base(null, true) {
 			Name = node.Node.Components[0];
 			FullName = string.Join(string.Empty, new string[] { parent.FullName, Name, Path.DirectorySeparatorChar.ToString() });
 			Attributes = node.Node.Components.Length > 1 ? FileAttributes.Directory : FileAttributes.Normal;
@@ -177,7 +157,7 @@
 			mMissingPhysicalPaths = NULL_DIRS;
 		}
 
-		private GitDirectory(DirectoryInfo di, FlattenedSubTree node) : base(di, true) {
+		GitDirectory(DirectoryInfo di, FlattenedSubTree node, bool virtualItemsOnly) : base(di, virtualItemsOnly) {
 			if (node != null) {
 				var subDirs = di.GetDirectories();
 				
@@ -203,6 +183,44 @@
 				return base.GetVirtualDirectories();
 		}
 
+		List<IDirectoryInfo> SplitToPhysical(DirectoryInfo[] subDirs, IList<FlattenedSubTree> subTrees) {
+			var physicalSubtrees = new List<IDirectoryInfo>(subTrees.Count / 2);
+
+			// from the current location, split all the subtrees in to
+			// those with physical nodes and those that are virtual
+			for (int i = subTrees.Count - 1; i >= 0; i--) {
+				var curr = subTrees[i];
+				var prefix = curr.Node.Components[0];
+
+				for (int j = 0; j < subDirs.Length; j++) {
+					var physicalDir = subDirs[j];
+
+					if (physicalDir == null)
+						continue;
+
+					if (physicalDir.Name.Equals(prefix, StringComparison.OrdinalIgnoreCase)) {
+						physicalSubtrees.Add(new GitDirectory(physicalDir, curr, VirtualItemsOnly));
+						subTrees.RemoveAt(i);
+						subDirs[j] = null;
+						
+						break;
+					}
+				}
+			}
+
+			// the remaining (non-removed) physical subdirs in the list contain
+			// only non-virtual items.  if we're printing non-virtual items then
+			// include these directories in the result (if they are not hidden)
+			if (!VirtualItemsOnly) {
+				for (int j = 0; j < subDirs.Length; j++) {
+					if (subDirs[j] != null && (subDirs[j].Attributes & FileAttributes.Hidden) != FileAttributes.Hidden)
+						physicalSubtrees.Add(new VirtualDirectory(subDirs[j], false));
+				}
+			}
+
+			return physicalSubtrees;
+		}
+
 		public override IDirectoryInfo[] GetDirectories() {
 			var vDirs = GetVirtualDirectories();
 			var pDirs = mMissingPhysicalPaths;
@@ -224,7 +242,13 @@
 					if (vPath.Node.Components.Length == 1) {
 						if (vPath.Node.IsFile) {
 							var fileName = vPath.Node.Components[0];
-							result.Add(new VirtualFile(fileName, FullName + fileName));
+							var fullName = FullName + fileName;
+
+							// check that the path doesn't exit, because
+							// if it does then the same file would end up
+							// being printed twice.
+							if (VirtualItemsOnly || !File.Exists(fullName))
+								result.Add(new VirtualFile(fileName, fullName));
 						}
 					}	
 				}
