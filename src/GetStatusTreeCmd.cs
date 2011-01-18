@@ -64,8 +64,6 @@
 			var lookup = new Dictionary<string, ItemStatus>(
 				StringComparer.OrdinalIgnoreCase);
 
-			System.Diagnostics.Debugger.Launch();
-
 			bool hasIndexItems = ProcessIndexItems(di, lookup);
 			bool hasWorkingItems = ProcessWorkingItems(di, lookup);
 
