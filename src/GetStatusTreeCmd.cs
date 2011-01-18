@@ -64,6 +64,8 @@
 			var lookup = new Dictionary<string, ItemStatus>(
 				StringComparer.OrdinalIgnoreCase);
 
+			System.Diagnostics.Debugger.Launch();
+
 			bool hasIndexItems = ProcessIndexItems(di, lookup);
 			bool hasWorkingItems = ProcessWorkingItems(di, lookup);
 
@@ -114,8 +116,10 @@
 						//     \AAA
 						var pathToCurr = root.FullName.Substring(reporoot.FullName.Length);
 						
-						path = path.Substring(path.IndexOf(pathToCurr, StringComparison.OrdinalIgnoreCase) +
-							pathToCurr.Length + 1);
+						int index = path.IndexOf(pathToCurr, StringComparison.OrdinalIgnoreCase);
+						
+						if (index > 0) path = path.Substring(index + pathToCurr.Length + 1);
+						else continue;
 					}
 
 					yield return path;
