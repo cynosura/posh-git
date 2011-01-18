@@ -22,6 +22,7 @@
 	{
 		public static void DrawTree(DirectoryInfo di, IEnumerable<string> removedPaths, 
 				Func<string, IFileSystemInfo, bool> printer, bool includeAllFiles) {
+
 			GitDirectory gitd = new GitDirectory(di, new List<string>(removedPaths), !includeAllFiles);
 			DirectoryTree.DrawTree(gitd, printer);
 		}
@@ -99,22 +100,23 @@
 			VirtualPath target = components[fromIndex];
 			List<VirtualPath> subComponents = null;
 
-			if (target.Components.Length > 1)
+			if (target.Components.Length > 1) {
 				subComponents = new List<VirtualPath>() {
 					new VirtualPath(target.Uri, RemoveFirst(target.Components))
 				};
 
-			string prefix = target.Components[0];
-			for (++fromIndex; fromIndex < components.Count; fromIndex++) {
-				var curr = components[fromIndex];
-				if (curr.Components.Length > 1 && curr.Components[0] == prefix) {
-					subComponents.Add(new VirtualPath(curr.Uri, RemoveFirst(curr.Components)));
-				} else {
-					fromIndex--;
-					break;
+				string prefix = target.Components[0];
+				for (++fromIndex; fromIndex < components.Count; fromIndex++) {
+					var curr = components[fromIndex];
+					if (curr.Components.Length > 1 && curr.Components[0] == prefix)
+						subComponents.Add(new VirtualPath(curr.Uri, RemoveFirst(curr.Components)));
+					else {
+						fromIndex--;
+						break;
+					}
 				}
 			}
-
+				
 			return new FlattenedSubTree(target, subComponents ?? 
 				(IList<VirtualPath>)new VirtualPath[0]{});
 		}
