@@ -72,14 +72,14 @@
 			if (di.Exists) {
 				base.Host.UI.WriteLine(di.FullName);
 				
-				GitTree.DrawTree(di, lookup.Keys, (item, path) => {
+				GitTree.DrawTree(di, lookup.Keys, /* printer */ (item, path) => {
 					if (path != null) {
 						string subpath = path.FullName.Substring(di.FullName.Length + 1);
 
 						ItemStatus status;
-						if (lookup.TryGetValue(subpath, out status)) {
+						if (lookup.TryGetValue(subpath, out status))
 							printRowFunc(status, item);
-						} else
+						else
 							printRowFunc(ItemStatus.Default, item);
 					}
 					return false;
@@ -87,6 +87,56 @@
 
 				base.Host.UI.WriteLine();
 			}
+		}
+
+		bool ProcessWorkingItems(DirectoryInfo di, Dictionary<string, ItemStatus> lookup) {
+			if (Working == null) return false;
+
+			var proc = new Func<IEnumerable<string>, WorkingStatus, bool>((c, x) => {
+				bool hasItems = false;
+				foreach (string path in c) {
+					hasItems = true;
+					ItemStatus ws;
+
+					if (lookup.TryGetValue(path, out ws))
+						ws.WorkingStatus = x;
+					else
+						lookup[path] = new ItemStatus(IndexStatus.None, x);
+				}
+				return hasItems;
+			});
+
+			var a = proc(ProcessStrings(di, Working, "Added"), WorkingStatus.Added);
+			var m = proc(ProcessStrings(di, Working, "Modified"), WorkingStatus.Modified);
+			var d = proc(ProcessStrings(di, Working, "Deleted"), WorkingStatus.Removed);
+			var u = proc(ProcessStrings(di, Working, "Unmerged"), WorkingStatus.Unmerged);
+
+			return a || m || d || u;
+		}
+
+		bool ProcessIndexItems(DirectoryInfo di, Dictionary<string, ItemStatus> lookup) {
+			if (Index == null) return false;
+
+			var proc = new Func<IEnumerable<string>, IndexStatus, bool>((c, x) => {
+				bool hasItems = false;
+				foreach (string path in c) {
+					hasItems = true;
+					ItemStatus ws;
+
+					if (lookup.TryGetValue(path, out ws))
+						ws.IndexStatus = x;
+					else
+						lookup[path] = new ItemStatus(x, WorkingStatus.None);
+				}
+				return hasItems;
+			});
+
+			var a = proc(ProcessStrings(di, Index, "Added"), IndexStatus.Added);
+			var m = proc(ProcessStrings(di, Index, "Modified"), IndexStatus.Modified);
+			var d = proc(ProcessStrings(di, Index, "Deleted"), IndexStatus.Removed);
+			var u = proc(ProcessStrings(di, Index, "Unmerged"), IndexStatus.Unmerged);
+
+			return a || m || d || u;
 		}
 
 		IEnumerable<string> ProcessStrings(DirectoryInfo root, PSObject pso, string propertyName) {
@@ -125,56 +175,6 @@
 			}
 		}
 
-		bool ProcessWorkingItems(DirectoryInfo di, Dictionary<string, ItemStatus> lookup) {
-			if (Working == null) return false;
-
-			var proc = new Func<IEnumerable<string>, WorkingStatus, bool>((c, x) => {
-				bool hasItems = false;
-				foreach (string path in c) {
-					hasItems = true;
-					ItemStatus ws;
-
-					if (lookup.TryGetValue(path, out ws))
-						ws.WorkingStatus = x;
-					else
-						lookup[path] = new ItemStatus(IndexStatus.None, x);
-				}
-				return hasItems;
-			});
-
-			var a = proc(ProcessStrings(di, Working, "Added"), WorkingStatus.Added);
-			var m = proc(ProcessStrings(di, Working, "Modified"), WorkingStatus.Modified);
-			var d = proc(ProcessStrings(di, Working, "Deleted"), WorkingStatus.Removed);
-			var u = proc(ProcessStrings(di, Working, "Unmerged"), WorkingStatus.Unmerged);
-
-			return a || m || d || u;
-		}
-
-		bool ProcessIndexItems(DirectoryInfo di, Dictionary<string, ItemStatus> lookup) {
-			if (Index == null) return false;
-			
-			var proc = new Func<IEnumerable<string>, IndexStatus, bool>((c, x) => {
-				bool hasItems = false;
-				foreach (string path in c) {
-					hasItems = true;
-					ItemStatus ws;
-
-					if (lookup.TryGetValue(path, out ws))
-						ws.IndexStatus = x;
-					else
-						lookup[path] = new ItemStatus(x, WorkingStatus.None);
-				}
-				return hasItems;
-			});
-
-			var a = proc(ProcessStrings(di, Index, "Added"), IndexStatus.Added);
-			var m = proc(ProcessStrings(di, Index, "Modified"), IndexStatus.Modified);
-			var d = proc(ProcessStrings(di, Index, "Deleted"), IndexStatus.Removed);
-			var u = proc(ProcessStrings(di, Index, "Unmerged"), IndexStatus.Unmerged);
-
-			return a || m || d || u;
-		}
-
 		Action<ItemStatus, string> GetPrinter(bool showIndex, bool showWorking) {
 			const string WORKING = "Working";
 			const string INDEX = "Index";
@@ -185,7 +185,7 @@
 			PSTable table = null;
 			Action<ItemStatus, string> result;
 
-			if (showIndex && showWorking) {
+			if (showIndex && showWorking) { // show the "index" and "working" columns
 				ColumnDefinition[] cols = new ColumnDefinition[] {
 					// the tree
 					new ColumnDefinition(string.Empty, totWidth - (WORKING.Length + INDEX.Length) - 3 /* padding */),
@@ -206,12 +206,12 @@
 				table = new PSTable(cols, base.Host);
 				result = new Action<ItemStatus, string>(
 					(x, y) => table.PrintLine(
-						x.IsDefault ? y : CreateDottedPadding(y, cols[0].Width),
+						PrepPrint(x.IsDefault, cols[0], y),
 						string.Empty, PrepPrint(x.IndexStatus, cols[2]) , 
 						string.Empty, PrepPrint(x.WorkingStatus, cols[4]),
 						string.Empty));
-				
-			} else if (showIndex) {
+
+			} else if (showIndex) { // show the "index" column only
 				ColumnDefinition[] cols = new ColumnDefinition[] {
 					// the tree
 					new ColumnDefinition(string.Empty, totWidth - INDEX.Length - 2),
@@ -227,11 +227,11 @@
 				table = new PSTable(cols, base.Host);
 				result = new Action<ItemStatus, string>(
 					(x, y) => table.PrintLine(
-						x.IsDefault ? y : CreateDottedPadding(y, cols[0].Width),
+						PrepPrint(x.IsDefault, cols[0], y),
 						string.Empty, PrepPrint(x.IndexStatus, cols[2]),
 						string.Empty));
 
-			} else if (showWorking) {
+			} else if (showWorking) { // show the working column only
 				ColumnDefinition[] cols = new ColumnDefinition[] {
 					// the tree
 					new ColumnDefinition(string.Empty, totWidth - WORKING.Length - 2),
@@ -247,7 +247,7 @@
 				table = new PSTable(cols, base.Host);
 				result = new Action<ItemStatus, string>(
 					(x, y) => table.PrintLine(
-						x.IsDefault ? y : CreateDottedPadding(y, cols[0].Width),
+						PrepPrint(x.IsDefault, cols[0], y),
 						string.Empty, PrepPrint(x.WorkingStatus, cols[2]),
 						string.Empty));
 
@@ -258,7 +258,12 @@
 			return result;
 		}
 
-		private string PrepPrint(WorkingStatus stats, ColumnDefinition col) {
+		private static string PrepPrint(bool isPhysical, ColumnDefinition col, string y) {
+			col.Foreground = isPhysical ? ConsoleColor.Gray : ConsoleColor.White;
+			return isPhysical ? y : CreateDottedPadding(y, col.Width);
+		}
+
+		string PrepPrint(WorkingStatus stats, ColumnDefinition col) {
 			ConsoleColor color;
 			string symbol;
 
@@ -285,7 +290,7 @@
 			return symbol;
 		}
 
-		private string PrepPrint(IndexStatus stats, ColumnDefinition col) {
+		string PrepPrint(IndexStatus stats, ColumnDefinition col) {
 			ConsoleColor color;
 			string symbol;
 
