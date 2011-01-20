@@ -2,12 +2,9 @@
 {
 	using System;
 	using System.Collections.Generic;
-	using System.Linq;
-	using System.Text;
+	using System.IO;
 	using System.Management.Automation;
 	using Microsoft.PowerShell.Commands;
-	using System.IO;
-	using System.Management.Automation.Host;
 
 	[Cmdlet(VerbsCommon.Show, "GitTree", SupportsShouldProcess = true)]
 	public class GetStatusTreeCmd : PSCmdlet
@@ -206,9 +203,9 @@
 				table = new PSTable(cols, base.Host);
 				result = new Action<ItemStatus, string>(
 					(x, y) => table.PrintLine(
-						PrepPrint(x.IsDefault, cols[0], y),
-						string.Empty, PrepPrint(x.IndexStatus, cols[2]) , 
-						string.Empty, PrepPrint(x.WorkingStatus, cols[4]),
+						PrepPrintPathCell(x.IsDefault, cols[0], y),
+						string.Empty, PrepPrintIndexCell(x.IndexStatus, cols[2]) , 
+						string.Empty, PrepPrintWorkingCell(x.WorkingStatus, cols[4]),
 						string.Empty));
 
 			} else if (showIndex) { // show the "index" column only
@@ -227,8 +224,8 @@
 				table = new PSTable(cols, base.Host);
 				result = new Action<ItemStatus, string>(
 					(x, y) => table.PrintLine(
-						PrepPrint(x.IsDefault, cols[0], y),
-						string.Empty, PrepPrint(x.IndexStatus, cols[2]),
+						PrepPrintPathCell(x.IsDefault, cols[0], y),
+						string.Empty, PrepPrintIndexCell(x.IndexStatus, cols[2]),
 						string.Empty));
 
 			} else if (showWorking) { // show the working column only
@@ -247,8 +244,8 @@
 				table = new PSTable(cols, base.Host);
 				result = new Action<ItemStatus, string>(
 					(x, y) => table.PrintLine(
-						PrepPrint(x.IsDefault, cols[0], y),
-						string.Empty, PrepPrint(x.WorkingStatus, cols[2]),
+						PrepPrintPathCell(x.IsDefault, cols[0], y),
+						string.Empty, PrepPrintWorkingCell(x.WorkingStatus, cols[2]),
 						string.Empty));
 
 			} else
@@ -258,12 +255,12 @@
 			return result;
 		}
 
-		private static string PrepPrint(bool isPhysical, ColumnDefinition col, string y) {
+		private static string PrepPrintPathCell(bool isPhysical, ColumnDefinition col, string path) {
 			col.Foreground = isPhysical ? ConsoleColor.Gray : ConsoleColor.White;
-			return isPhysical ? y : CreateDottedPadding(y, col.Width);
+			return isPhysical ? path : CreateDottedPadding(path, col.Width);
 		}
 
-		string PrepPrint(WorkingStatus stats, ColumnDefinition col) {
+		string PrepPrintWorkingCell(WorkingStatus stats, ColumnDefinition col) {
 			ConsoleColor color;
 			string symbol;
 
@@ -290,7 +287,7 @@
 			return symbol;
 		}
 
-		string PrepPrint(IndexStatus stats, ColumnDefinition col) {
+		string PrepPrintIndexCell(IndexStatus stats, ColumnDefinition col) {
 			ConsoleColor color;
 			string symbol;
 
