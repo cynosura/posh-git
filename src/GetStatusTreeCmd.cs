@@ -159,12 +159,14 @@
 						//     \BBB\afile.txt
 						// if current dir is:
 						//     \AAA
-						var pathToCurr = root.FullName.Substring(reporoot.FullName.Length);
-						
-						int index = path.IndexOf(pathToCurr, StringComparison.OrdinalIgnoreCase);
-						
-						if (index > 0) path = path.Substring(index + pathToCurr.Length + 1);
-						else continue;
+
+						var combined = Path.Combine(root.FullName, path);
+						var fullPath = path = Path.GetFullPath(combined);
+
+						if (fullPath.StartsWith(root.FullName, StringComparison.OrdinalIgnoreCase))
+							path = fullPath.Substring(root.FullName.Length);
+						else
+							continue;
 					}
 
 					yield return path;
@@ -256,7 +258,7 @@
 		}
 
 		private static string PrepPrintPathCell(bool isPhysical, ColumnDefinition col, string path) {
-			col.Foreground = isPhysical ? ConsoleColor.Gray : ConsoleColor.White;
+//			col.Foreground = isPhysical ? ConsoleColor.Gray : ConsoleColor.White;
 			return isPhysical ? path : CreateDottedPadding(path, col.Width);
 		}
 
