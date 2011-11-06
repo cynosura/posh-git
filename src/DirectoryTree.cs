@@ -1,206 +1,198 @@
-﻿namespace PoshGit
-{
-	using System;
-	using System.Collections.Generic;
-	using System.Linq;
-	using System.Text;
-	using System.IO;
+﻿namespace PoshGit {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.IO;
 
-	public static class DirectoryTree
-	{
-		const string BRANCH = "├───";
-		const string LAST_IN_BRANCH = "└───";
-		const string EMPTY_BRANCH = "    ";
-		const string VERT_LINE = "│   ";
+    public static class DirectoryTree {
+        const string BRANCH = "├───";
+        const string LAST_IN_BRANCH = "└───";
+        const string EMPTY_BRANCH = "    ";
+        const string VERT_LINE = "│   ";
 
-		public static void DrawTree(IDirectoryInfo di, Func<string, IFileSystemInfo, bool> printer) {
-			var indentStack = new List<string>(8);
-			DrawTreeRec(di, printer, indentStack);
-		}
-		
-		private static void DrawTreeRec(IDirectoryInfo di, Func<string, IFileSystemInfo, bool> printer, 
-				List<string> indentStack) {
-			
-			IDirectoryInfo[] subdirs = di.GetDirectories();
-			 int lim = subdirs.Length - 1;
+        public static void DrawTree(IDirectoryInfo di, Func<string, IFileSystemInfo, bool> printer) {
+            var indentStack = new List<string>(8);
+            DrawTreeRec(di, printer, indentStack);
+        }
 
-			string currIndent = BuildIndent(indentStack);
-			bool cancel;
+        private static void DrawTreeRec(IDirectoryInfo di, Func<string, IFileSystemInfo, bool> printer,
+                List<string> indentStack) {
 
-			var files = di.GetFiles();
-			if (files.Length > 0) {
-				foreach (var file in files) {
-					var line = new string[] { currIndent, subdirs.Length == 0 ? EMPTY_BRANCH : VERT_LINE, file.Name };
-					cancel = printer(String.Join(String.Empty, line), file);
-				}
+            IDirectoryInfo[] subdirs = di.GetDirectories();
+            int lim = subdirs.Length - 1;
 
-				// print a blank line
-				var blankLine = new string[] { currIndent, subdirs.Length == 0 ? EMPTY_BRANCH : VERT_LINE};
-				cancel = printer(String.Join(String.Empty, blankLine), null);
-			}
+            string currIndent = BuildIndent(indentStack);
+            bool cancel;
 
-			for (int i = 0; i <= lim; i++) {
-				var subdir = subdirs[i];
-				if (subdir == null) continue;
+            var files = di.GetFiles();
+            if (files.Length > 0) {
+                foreach (var file in files) {
+                    var line = new string[] { currIndent, subdirs.Length == 0 ? EMPTY_BRANCH : VERT_LINE, file.Name };
+                    cancel = printer(String.Join(String.Empty, line), file);
+                }
 
-				bool isLast = i == lim;
-				
-				
-				if (isLast) {
-					// last sub dir
-					var line = new string[] { currIndent, LAST_IN_BRANCH, subdir.Name };
-					cancel = printer(String.Join(String.Empty, line), subdir);
+                // print a blank line
+                var blankLine = new string[] { currIndent, subdirs.Length == 0 ? EMPTY_BRANCH : VERT_LINE };
+                cancel = printer(String.Join(String.Empty, blankLine), null);
+            }
 
-				} else {
-					var line = new string[] { currIndent, BRANCH, subdir.Name };
-					cancel = printer(String.Join(String.Empty, line), subdir);
-				}
+            for (int i = 0; i <= lim; i++) {
+                var subdir = subdirs[i];
+                if (subdir == null) continue;
 
-				if (cancel)
-					return;
-				else {
-					indentStack.Add(isLast ? EMPTY_BRANCH : VERT_LINE);
-					DrawTreeRec(subdir, printer , indentStack);
-					indentStack.RemoveAt(indentStack.Count - 1);
-				}
-					
-			}
-		}
+                bool isLast = i == lim;
 
-		private static string[] BuildOutputLine(string output, string indent, int depth) {
-			string[] result = new string[depth + 1];
-			
-			for (int i = 0; i < depth; i++)
-				result[i] = (depth -1 == i ? indent : new String(' ', indent.Length));
 
-			result[depth] = output;
-			return result;
-		}
+                if (isLast) {
+                    // last sub dir
+                    var line = new string[] { currIndent, LAST_IN_BRANCH, subdir.Name };
+                    cancel = printer(String.Join(String.Empty, line), subdir);
 
-		static string BuildIndent(List<String> indentStack) {
-			var arr = indentStack.ToArray();
-			return String.Join(String.Empty, arr);
-		}
-	}
+                } else {
+                    var line = new string[] { currIndent, BRANCH, subdir.Name };
+                    cancel = printer(String.Join(String.Empty, line), subdir);
+                }
 
-	public class VirtualFileSystemInfo : IFileSystemInfo
-	{
-		public string Name {
-			get;
-			protected set;
-		}
+                if (cancel)
+                    return;
+                else {
+                    indentStack.Add(isLast ? EMPTY_BRANCH : VERT_LINE);
+                    DrawTreeRec(subdir, printer, indentStack);
+                    indentStack.RemoveAt(indentStack.Count - 1);
+                }
 
-		public string FullName {
-			get;
-			protected set;
-		}
+            }
+        }
 
-		public FileAttributes Attributes {
-			get;
-			protected set;
-		}
-	}
+        private static string[] BuildOutputLine(string output, string indent, int depth) {
+            string[] result = new string[depth + 1];
 
-	public class VirtualDirectory : VirtualFileSystemInfo, IDirectoryInfo
-	{
-		static readonly IDirectoryInfo[] sZeroDirArr = new IDirectoryInfo[0];
-		static readonly IFileInfo[] sZeroFileArr = new IFileInfo[0];
+            for (int i = 0; i < depth; i++)
+                result[i] = (depth - 1 == i ? indent : new String(' ', indent.Length));
 
-		readonly DirectoryInfo mPhysicalDir;
-		protected readonly bool VirtualItemsOnly;
+            result[depth] = output;
+            return result;
+        }
 
-		public VirtualDirectory(DirectoryInfo physicalDir, bool virtualItemsOnly) {
-			mPhysicalDir = physicalDir;
-			VirtualItemsOnly = virtualItemsOnly;
+        static string BuildIndent(List<String> indentStack) {
+            var arr = indentStack.ToArray();
+            return String.Join(String.Empty, arr);
+        }
+    }
 
-			if (physicalDir != null) {
-				// ensure a directory path terminates with a slash
-				string fName = physicalDir.FullName.Last().Equals(Path.DirectorySeparatorChar) ?
-					physicalDir.FullName : physicalDir.FullName + Path.DirectorySeparatorChar;
-				
-				Name = physicalDir.Name;
-				FullName = fName;
-				Attributes = physicalDir.Attributes;
-			}
-		}
+    public class VirtualFileSystemInfo : IFileSystemInfo {
+        public string Name {
+            get;
+            protected set;
+        }
 
-		protected virtual VirtualFile CreateFile(FileInfo fileInfo) {
-			return new VirtualFile(fileInfo);
-		}
+        public string FullName {
+            get;
+            protected set;
+        }
 
-		protected virtual VirtualDirectory CreateDirectory(DirectoryInfo directoryInfo) {
-			return new VirtualDirectory(directoryInfo, VirtualItemsOnly);
-		}
+        public FileAttributes Attributes {
+            get;
+            protected set;
+        }
+    }
 
-		protected virtual IFileInfo[] GetVirtualFiles() {
-			return sZeroFileArr;
-		}
+    public class VirtualDirectory : VirtualFileSystemInfo, IDirectoryInfo {
+        static readonly IDirectoryInfo[] sZeroDirArr = new IDirectoryInfo[0];
+        static readonly IFileInfo[] sZeroFileArr = new IFileInfo[0];
 
-		protected virtual IDirectoryInfo[] GetVirtualDirectories() {
-			return sZeroDirArr;
-		}
+        readonly DirectoryInfo mPhysicalDir;
+        protected readonly bool VirtualItemsOnly;
 
-		public virtual IFileInfo[] GetFiles() {
-			if (mPhysicalDir != null && !VirtualItemsOnly) {
-				var files = mPhysicalDir.GetFiles();
-				return MergeFileSystemItems(files, GetVirtualFiles(), CreateFile);
-			} else
-				return GetVirtualFiles();
-		}
+        public VirtualDirectory(DirectoryInfo physicalDir, bool virtualItemsOnly) {
+            mPhysicalDir = physicalDir;
+            VirtualItemsOnly = virtualItemsOnly;
 
-		public virtual IDirectoryInfo[] GetDirectories() {
-			if (mPhysicalDir != null && !VirtualItemsOnly) {
-				var dirs = mPhysicalDir.GetDirectories();
-				return MergeFileSystemItems(dirs, GetVirtualDirectories(), CreateDirectory);
-			} else
-				return GetVirtualDirectories();
-		}
+            if (physicalDir != null) {
+                // ensure a directory path terminates with a slash
+                string fName = physicalDir.FullName.Last().Equals(Path.DirectorySeparatorChar) ?
+                    physicalDir.FullName : physicalDir.FullName + Path.DirectorySeparatorChar;
 
-		static T[] MergeFileSystemItems<T, TPhysical>(TPhysical[] existingItems,
-				T[] ghostItems, Func<TPhysical, T> createWrapper) {
+                Name = physicalDir.Name;
+                FullName = fName;
+                Attributes = physicalDir.Attributes;
+            }
+        }
 
-			var resultLength = existingItems.Length + ghostItems.Length;
-			var result = new T[resultLength];
+        protected virtual VirtualFile CreateFile(FileInfo fileInfo) {
+            return new VirtualFile(fileInfo);
+        }
 
-			int i = 0;
-			for (; i < existingItems.Length; i++)
-				result[i] = createWrapper(existingItems[i]);
+        protected virtual VirtualDirectory CreateDirectory(DirectoryInfo directoryInfo) {
+            return new VirtualDirectory(directoryInfo, VirtualItemsOnly);
+        }
 
-			if (ghostItems.Length > 0)
-				ghostItems.CopyTo(result, i);
+        protected virtual IFileInfo[] GetVirtualFiles() {
+            return sZeroFileArr;
+        }
 
-			return result;
-		}
-	}
+        protected virtual IDirectoryInfo[] GetVirtualDirectories() {
+            return sZeroDirArr;
+        }
 
-	public class VirtualFile : VirtualFileSystemInfo, IFileInfo
-	{
-		public VirtualFile(FileInfo file) {
-			Name = file.Name;
-			FullName = file.FullName;
-			Attributes = file.Attributes;
-		}
+        public virtual IFileInfo[] GetFiles() {
+            if (mPhysicalDir != null && !VirtualItemsOnly) {
+                var files = mPhysicalDir.GetFiles();
+                return MergeFileSystemItems(files, GetVirtualFiles(), CreateFile);
+            } else
+                return GetVirtualFiles();
+        }
 
-		public VirtualFile(string name, string fullName) {
-			Name = name;
-			FullName = fullName;
-		}
-	}
+        public virtual IDirectoryInfo[] GetDirectories() {
+            if (mPhysicalDir != null && !VirtualItemsOnly) {
+                var dirs = mPhysicalDir.GetDirectories();
+                return MergeFileSystemItems(dirs, GetVirtualDirectories(), CreateDirectory);
+            } else
+                return GetVirtualDirectories();
+        }
 
-	public interface IFileSystemInfo
-	{
-		string Name { get; }
-		string FullName { get; }
-		FileAttributes Attributes { get; }
-	}
+        static T[] MergeFileSystemItems<T, TPhysical>(TPhysical[] existingItems,
+                T[] ghostItems, Func<TPhysical, T> createWrapper) {
 
-	public interface IDirectoryInfo : IFileSystemInfo
-	{
-		IFileInfo[] GetFiles();
-		IDirectoryInfo[] GetDirectories();
-	}
+            var resultLength = existingItems.Length + ghostItems.Length;
+            var result = new T[resultLength];
 
-	public interface IFileInfo : IFileSystemInfo
-	{
-	}
+            int i = 0;
+            for (; i < existingItems.Length; i++)
+                result[i] = createWrapper(existingItems[i]);
+
+            if (ghostItems.Length > 0)
+                ghostItems.CopyTo(result, i);
+
+            return result;
+        }
+    }
+
+    public class VirtualFile : VirtualFileSystemInfo, IFileInfo {
+        public VirtualFile(FileInfo file) {
+            Name = file.Name;
+            FullName = file.FullName;
+            Attributes = file.Attributes;
+        }
+
+        public VirtualFile(string name, string fullName) {
+            Name = name;
+            FullName = fullName;
+        }
+    }
+
+    public interface IFileSystemInfo {
+        string Name { get; }
+        string FullName { get; }
+        FileAttributes Attributes { get; }
+    }
+
+    public interface IDirectoryInfo : IFileSystemInfo {
+        IFileInfo[] GetFiles();
+        IDirectoryInfo[] GetDirectories();
+    }
+
+    public interface IFileInfo : IFileSystemInfo {
+    }
 }
