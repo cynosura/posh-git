@@ -43,7 +43,7 @@ if(Test-Path Function:\TabExpansion) {
     }
 }
 
-function GitTree() {
+function gt() {
 	param(
 		[switch] $all
 	)
