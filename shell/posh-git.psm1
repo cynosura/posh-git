@@ -10,12 +10,11 @@ Push-Location $psScriptRoot
 . ./TortoiseGit.ps1
 Pop-Location
 
-Export-ModuleMember -Function @(
-        'Write-GitStatus', 
-        'Get-GitStatus',
-        'Enable-GitColors', 
-        'Get-GitDirectory',
-        'GitTabExpansion',
-        'Get-GitAliasPattern',
-        'Start-SshAgent',
-        'tgit') - Alias 'gitstat'
+Export-ModuleMember -function Write-GitStatus,
+        Get-GitStatus,
+        Enable-GitColors, 
+        Get-GitDirectory,
+        GitTabExpansion,
+        Get-GitAliasPattern,
+        Start-SshAgent,
+        tgit -alias 'gitstat'

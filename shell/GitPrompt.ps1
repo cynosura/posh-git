@@ -79,11 +79,9 @@ function Write-GitStatus($status, $asTree = $false, $showAllFiles = $false) {
                 if($s.ShowStatusWhenZero -or $status.Index.Deleted) {
                   Write-Host " -$($status.Index.Deleted.Count)" -NoNewline -BackgroundColor $s.IndexBackgroundColor -ForegroundColor $s.IndexForegroundColor
                 }
-
 				if ($status.Index.Unmerged) {
 					Write-Host " !$($status.Index.Unmerged.Count)" -NoNewline -BackgroundColor $s.IndexBackgroundColor -ForegroundColor $s.IndexForegroundColor
 				}
-
 				if($status.HasWorking) {
 					Write-Host $s.DelimText -NoNewline -BackgroundColor $s.DelimBackgroundColor -ForegroundColor $s.DelimForegroundColor
 				}

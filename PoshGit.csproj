@@ -49,9 +49,11 @@
     <Compile Include="src\PSTable.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ScriptFile Include="src\Sample.fsx" />
+    <ScriptFile Include="test\Sample.fsx" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="shell\CheckVersion.ps1" />
+  </ItemGroup>
   <ItemGroup>
     <ScriptFile Include="readme.md" />
     <ScriptFile Include="shell\GitPrompt.ps1" />
