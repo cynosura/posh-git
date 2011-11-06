@@ -42,28 +42,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\DirectoryTree.cs" />
-    <Compile Include="src\GetStatusTreeCmd.cs" />
-    <Compile Include="src\GitDirectory.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="src\PSTable.cs" />
+    <Compile Include="DirectoryTree.cs" />
+    <Compile Include="GetStatusTreeCmd.cs" />
+    <Compile Include="GitDirectory.cs" />
+    <Compile Include="PSTable.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ScriptFile Include="test\Sample.fsx" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shell\CheckVersion.ps1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ScriptFile Include="readme.md" />
-    <ScriptFile Include="shell\GitPrompt.ps1" />
-    <ScriptFile Include="shell\GitTabExpansion.ps1" />
-    <ScriptFile Include="shell\GitUtils.ps1" />
-    <ScriptFile Include="shell\install.ps1" />
-    <ScriptFile Include="shell\posh-git.psm1" />
-    <ScriptFile Include="shell\profile.example.ps1" />
-    <ScriptFile Include="shell\TortoiseGit.ps1" />
-    <ScriptFile Include="shell\Utils.ps1" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="BeforeBuild">
