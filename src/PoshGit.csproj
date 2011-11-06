@@ -46,6 +46,7 @@
     <Compile Include="GetStatusTreeCmd.cs" />
     <Compile Include="GitDirectory.cs" />
     <Compile Include="PSTable.cs" />
+    <Compile Include="AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
@@ -54,6 +55,5 @@
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">
-    <Copy SourceFiles="@(ScriptFile)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 </Project>
