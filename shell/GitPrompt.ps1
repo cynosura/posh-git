@@ -86,6 +86,22 @@ function Write-GitStatus($status, $asTree = $false, $showAllFiles = $false) {
 					Write-Host $s.DelimText -NoNewline -BackgroundColor $s.DelimBackgroundColor -ForegroundColor $s.DelimForegroundColor
 				}
 			}
+
+            if($s.EnableFileStatus -and $status.HasWorking) {
+                if($s.ShowStatusWhenZero -or $status.Working.Added) {
+                  Write-Host " +$($status.Working.Added.Count)" -NoNewline -BackgroundColor $s.WorkingBackgroundColor -ForegroundColor $s.WorkingForegroundColor
+                }
+                if($s.ShowStatusWhenZero -or $status.Working.Modified) {
+                  Write-Host " ~$($status.Working.Modified.Count)" -NoNewline -BackgroundColor $s.WorkingBackgroundColor -ForegroundColor $s.WorkingForegroundColor
+                }
+                if($s.ShowStatusWhenZero -or $status.Working.Deleted) {
+                  Write-Host " -$($status.Working.Deleted.Count)" -NoNewline -BackgroundColor $s.WorkingBackgroundColor -ForegroundColor $s.WorkingForegroundColor
+                }
+
+                if ($status.Working.Unmerged) {
+                    Write-Host " !$($status.Working.Unmerged.Count)" -NoNewline -BackgroundColor $s.WorkingBackgroundColor -ForegroundColor $s.WorkingForegroundColor
+                }
+            }
 			
 			if ($status.HasUntracked) {
 				Write-Host $s.UntrackedText -NoNewline -BackgroundColor $s.UntrackedBackgroundColor -ForegroundColor $s.UntrackedForegroundColor
